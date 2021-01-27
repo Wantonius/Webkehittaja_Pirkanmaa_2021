@@ -2,6 +2,8 @@ import logo from './logo.svg';
 import './App.css';
 import React from 'react';
 import ShoppingForm from './components/ShoppingForm';
+import ShoppingList from './components/ShoppingList';
+
 class App extends React.Component {
 	
 	constructor(props) {
@@ -39,13 +41,45 @@ class App extends React.Component {
 	}
 	
 	addToList = (item) => {
-		
+		let request = {
+			method:"POST",
+			mode:"cors",
+			headers:{"Content-type":"application/json"},
+			body:JSON.stringify(item)
+		}
+		fetch("/api/shopping",request).then(response => {
+			if(response.ok) {
+				this.getList();
+			} else {
+				console.log("Server responded with a status:",response.status);
+			}
+		}).catch(error => {
+			console.log("Server responded with an error. Reason:",error);
+		});		
+	}
+	
+	removeFromList = (id) => {
+		let request = {
+			method:"DELETE",
+			mode:"cors",
+			headers:{"Content-type":"application/json"}
+		}
+		fetch("/api/shopping/"+id,request).then(response => {
+			if(response.ok) {
+				this.getList();
+			} else {
+				console.log("Server responded with a status:",response.status);
+			}
+		}).catch(error => {
+			console.log("Server responded with an error. Reason:",error);
+		});
 	}
 	
 	render() {
 		return (
 			<div className="App">
 				<ShoppingForm addToList={this.addToList}/>
+				<ShoppingList list={this.state.list} removeFromList={this.removeFromList}/>
 			</div>
 		);
 	}
