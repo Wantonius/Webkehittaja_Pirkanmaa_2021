@@ -3,6 +3,8 @@ import './App.css';
 import React from 'react';
 import ShoppingForm from './components/ShoppingForm';
 import ShoppingList from './components/ShoppingList';
+import Navbar from './components/Navbar';
+import {Switch,Route} from 'react-router-dom';
 
 class App extends React.Component {
 	
@@ -74,12 +76,37 @@ class App extends React.Component {
 			console.log("Server responded with an error. Reason:",error);
 		});
 	}
-	
+
+	editItem = (item) => {
+		let request = {
+			method:"PUT",
+			mode:"cors",
+			headers:{"Content-type":"application/json"},
+			body:JSON.stringify(item)
+		}
+		fetch("/api/shopping/"+item.id,request).then(response => {
+			if(response.ok) {
+				this.getList();
+			} else {
+				console.log("Server responded with a status:",response.status);
+			}
+		}).catch(error => {
+			console.log("Server responded with an error. Reason:",error);
+		});
+	}	
 	render() {
 		return (
 			<div className="App">
-				<ShoppingForm addToList={this.addToList}/>
-				<ShoppingList list={this.state.list} removeFromList={this.removeFromList}/>
+				<Navbar/>
+				<hr/>
+				<Switch>
+					<Route exact path="/" render={ () => 
+					(<ShoppingList list={this.state.list} removeFromList={this.removeFromList} editItem={this.editItem}/>)
+					}/>
+					<Route path="/form" render={() => (
+					<ShoppingForm addToList={this.addToList}/>)
+					}/>				
+				</Switch>
 			</div>
 		);
 	}

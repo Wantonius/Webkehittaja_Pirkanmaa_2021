@@ -1,7 +1,8 @@
 import React from 'react';
 import {Form,Button} from 'semantic-ui-react';
+import {withRouter} from 'react-router-dom';
 
-export default class ShoppingForm extends React.Component {
+class ShoppingForm extends React.Component {
 
 	constructor(props) {
 		super(props);
@@ -31,6 +32,7 @@ export default class ShoppingForm extends React.Component {
 			count:0,
 			price:0
 		})
+		this.props.history.push("/");
 	}
 	
 	render() {
@@ -65,3 +67,5 @@ export default class ShoppingForm extends React.Component {
 		)
 	}
 }
+
+export default withRouter(ShoppingForm);
