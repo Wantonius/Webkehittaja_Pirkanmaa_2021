@@ -5,7 +5,7 @@ import ShoppingForm from './components/ShoppingForm';
 import ShoppingList from './components/ShoppingList';
 import LoginPage from './components/LoginPage';
 import Navbar from './components/Navbar';
-import {Switch,Route} from 'react-router-dom';
+import {Switch,Route,Redirect} from 'react-router-dom';
 
 class App extends React.Component {
 	
@@ -45,6 +45,32 @@ class App extends React.Component {
 		})
 	}
 	
+	login = (user) => {
+		let request = {
+			method:"POST",
+			mode:"cors",
+			headers:{"Content-type":"application/json"},
+			body:JSON.stringify(user)
+		}
+		fetch("/login",request).then(response => {
+			if(response.ok) {
+				response.json().then(data => {
+					this.setState({
+						isLogged:true,
+						token:data.token
+					}, () => {
+						this.getList();
+					})
+				}).catch(error => {
+					console.log("Failed to parse JSON. Error:",error)
+				})
+			} else {
+				console.log("Server responded with a status:",response.status);
+			}
+		}).catch(error => {
+			console.log("Server responded with an error:",error);
+		})
+	}	
 	
 	//REST API
 	
@@ -52,7 +78,8 @@ class App extends React.Component {
 		let request = {
 			method:"GET",
 			mode:"cors",
-			headers:{"Content-type":"application/json"}
+			headers:{"Content-type":"application/json",
+				token:this.state.token}
 		}
 		fetch("/api/shopping",request).then(response => {
 			if(response.ok) {
@@ -76,7 +103,8 @@ class App extends React.Component {
 		let request = {
 			method:"POST",
 			mode:"cors",
-			headers:{"Content-type":"application/json"},
+			headers:{"Content-type":"application/json",
+				token:this.state.token},
 			body:JSON.stringify(item)
 		}
 		fetch("/api/shopping",request).then(response => {
@@ -94,7 +122,8 @@ class App extends React.Component {
 		let request = {
 			method:"DELETE",
 			mode:"cors",
-			headers:{"Content-type":"application/json"}
+			headers:{"Content-type":"application/json",
+				token:this.state.token}
 		}
 		fetch("/api/shopping/"+id,request).then(response => {
 			if(response.ok) {
@@ -111,7 +140,8 @@ class App extends React.Component {
 		let request = {
 			method:"PUT",
 			mode:"cors",
-			headers:{"Content-type":"application/json"},
+			headers:{"Content-type":"application/json",
+				token:this.state.token},
 			body:JSON.stringify(item)
 		}
 		fetch("/api/shopping/"+item.id,request).then(response => {
@@ -127,18 +157,29 @@ class App extends React.Component {
 	render() {
 		return (
 			<div className="App">
-				<Navbar/>
+				<Navbar isLogged={this.state.isLogged}/>
 				<hr/>
 				<Switch>
 					<Route exact path="/" render={() => 
-						(<LoginPage register={this.register}/>)
+						this.state.isLogged ? 
+						(<Redirect to="/list"/>) :
+						(<LoginPage register={this.register} login={this.login}/>)
 					}/>
-					<Route path="/list" render={ () => 
-						(<ShoppingList list={this.state.list} removeFromList={this.removeFromList} editItem={this.editItem}/>)
+					<Route path="/list" render={() => 
+						this.state.isLogged ?
+						(<ShoppingList list={this.state.list} removeFromList={this.removeFromList} editItem={this.editItem}/>) :
+						(<Redirect to="/"/>)
 					}/>
 					<Route path="/form" render={() => 
-						(<ShoppingForm addToList={this.addToList}/>)
-					}/>				
+						this.state.isLogged ?
+						(<ShoppingForm addToList={this.addToList}/>) :
+						(<Redirect to="/"/>)
+					}/>	
+					<Route render={() => 
+						this.state.isLogged ?
+						(<Redirect to="/list"/>):
+						(<Redirect to="/"/>)
+					}/>
 				</Switch>
 			</div>
 		);
