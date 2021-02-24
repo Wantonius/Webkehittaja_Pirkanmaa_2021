@@ -19,7 +19,19 @@ class App extends React.Component {
 	}
 	
 	componentDidMount() {
-		this.getList();
+		if(sessionStorage.getItem("state")) {
+			let state = JSON.parse(sessionStorage.getItem("state"));
+			this.setState(state, () => {
+				if(this.state.isLogged) {
+					this.getList();
+				}
+			})
+		}
+	
+	}
+	
+	saveToStorage = () => {
+		sessionStorage.setItem("state",JSON.stringify(this.state));
 	}
 	
 	//LOGIN API
@@ -59,6 +71,7 @@ class App extends React.Component {
 						isLogged:true,
 						token:data.token
 					}, () => {
+						this.saveToStorage();
 						this.getList();
 					})
 				}).catch(error => {
@@ -67,6 +80,26 @@ class App extends React.Component {
 			} else {
 				console.log("Server responded with a status:",response.status);
 			}
+		}).catch(error => {
+			console.log("Server responded with an error:",error);
+		})
+	}	
+	
+	logout = () => {
+		let request = {
+			method:"POST",
+			mode:"cors",
+			headers:{"Content-type":"application/json",
+			token:this.state.token}
+		}
+		fetch("/logout",request).then(response => {
+			this.setState({
+				isLogged:false,
+				token:"",
+				list:[]
+			}, () => {
+				this.saveToStorage();
+			})
 		}).catch(error => {
 			console.log("Server responded with an error:",error);
 		})
@@ -86,6 +119,8 @@ class App extends React.Component {
 				response.json().then(data => {
 					this.setState({
 						list:data
+					}, () => {
+						this.saveToStorage();
 					}); 
 				}).catch(error => {
 					console.log("Failed to parse JSON. Reason:",error);
@@ -157,7 +192,7 @@ class App extends React.Component {
 	render() {
 		return (
 			<div className="App">
-				<Navbar isLogged={this.state.isLogged}/>
+				<Navbar isLogged={this.state.isLogged} logout={this.logout}/>
 				<hr/>
 				<Switch>
 					<Route exact path="/" render={() => 
