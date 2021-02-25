@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const apiRoutes = require("./routes/apiroutes");
+const bcrypt = require("bcrypt");
 
 let app = express();
 
@@ -63,13 +64,19 @@ app.post("/register",function(req,res) {
 			return res.status(409).json({message:"Username already in use"});
 		}
 	}
-	let user = {
-		username:req.body.username,
-		password:req.body.password
-	}
-	registeredUsers.push(user);
-	console.log(registeredUsers);
-	return res.status(200).json({message:"success"});
+	bcrypt.hash(req.body.password,14,function(err,hash) {
+		if(err) {
+			return res.status(400).json({message:"Bad Request"});
+		}
+		let user = {
+			username:req.body.username,
+			password:hash
+		}
+		registeredUsers.push(user);
+		console.log(registeredUsers);
+		return res.status(200).json({message:"success"});	
+	})
+
 })
 
 app.post("/login",function(req,res) {
@@ -84,17 +91,24 @@ app.post("/login",function(req,res) {
 	}
 	for(let i=0;i<registeredUsers.length;i++) {
 		if(registeredUsers[i].username === req.body.username) {
-			if(registeredUsers[i].password === req.body.password) {
-				let token = createToken();
-				let time = Date.now();
-				let session = {
-					user:req.body.username,
-					ttl:time+ttl,
-					token:token
-				}
-				loggedSessions.push(session);
-				return res.status(200).json({token:token});
-			}
+			bcrypt.compare(req.body.password,registeredUsers[i].password,function(err,success) {
+					if(err) {
+						return res.status(400).json({message:"Bad Request"})
+					}
+					if(!success) {
+						return res.status(403).json({message:"forbidden"})
+					}
+					let token = createToken();
+					let time = Date.now();
+					let session = {
+						user:req.body.username,
+						ttl:time+ttl,
+						token:token
+					}
+					loggedSessions.push(session);
+					return res.status(200).json({token:token});
+			})
+			return;
 		}
 	}
 	return res.status(403).json({message:"forbidden"});
