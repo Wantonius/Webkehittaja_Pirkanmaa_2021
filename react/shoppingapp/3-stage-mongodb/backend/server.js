@@ -3,6 +3,8 @@ const bodyParser = require("body-parser");
 const apiRoutes = require("./routes/apiroutes");
 const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
+const userModel = require("./models/user");
+const sessionModel = require("./models/session");
 
 let app = express();
 
@@ -13,11 +15,6 @@ mongoose.connect("mongodb://localhost/webshopping").then(
 
 app.use(bodyParser.json());
 
-
-//LOGIN DATABASES
-
-const registeredUsers = [];
-const loggedSessions = [];
 const ttl = 3600000;
 
 //HELPER FUNCTIONS
@@ -64,25 +61,26 @@ app.post("/register",function(req,res) {
 	}
 	if(req.body.username.length < 4 || req.body.password.length < 8) {
 		return res.status(400).json({message:"Username must be atleast 4 characters and password 8 characters long"});
-	}
-	for(let i=0;i<registeredUsers.length;i++) {
-		if(req.body.username === registeredUsers[i].username) {
-			return res.status(409).json({message:"Username already in use"});
-		}
-	}
+	}	
 	bcrypt.hash(req.body.password,14,function(err,hash) {
 		if(err) {
 			return res.status(400).json({message:"Bad Request"});
 		}
-		let user = {
+		let user = new userModel({
 			username:req.body.username,
 			password:hash
-		}
-		registeredUsers.push(user);
-		console.log(registeredUsers);
-		return res.status(200).json({message:"success"});	
+		});
+		user.save(function(err) {
+			if(err) {
+				console.log("Failed to register user. Reason:",err);
+				if(err.code === 11000) {
+					return res.status(409).json({message:"Username is already in use"});
+				}
+				return res.status(500).json({message:"Internal server error"});
+			}
+			return res.status(200).json({message:"success"});
+		})
 	})
-
 })
 
 app.post("/login",function(req,res) {
