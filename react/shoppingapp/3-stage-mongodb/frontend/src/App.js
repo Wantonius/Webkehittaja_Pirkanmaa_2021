@@ -34,6 +34,16 @@ class App extends React.Component {
 		sessionStorage.setItem("state",JSON.stringify(this.state));
 	}
 	
+	clearState = () => {
+		this.setState({
+			list:[],
+			token:"",
+			isLogged:false
+		}, () => {
+			this.saveToStorage();
+		}) 
+	}
+	
 	//LOGIN API
 	
 	register = (user) => {
@@ -93,13 +103,7 @@ class App extends React.Component {
 			token:this.state.token}
 		}
 		fetch("/logout",request).then(response => {
-			this.setState({
-				isLogged:false,
-				token:"",
-				list:[]
-			}, () => {
-				this.saveToStorage();
-			})
+			this.clearState();
 		}).catch(error => {
 			console.log("Server responded with an error:",error);
 		})
@@ -126,6 +130,9 @@ class App extends React.Component {
 					console.log("Failed to parse JSON. Reason:",error);
 				});	
 			} else {
+				if(response.status === 403) {
+					this.clearState();
+				}
 				console.log("Server responded with a status:",response.status);
 			}
 		}).catch(error => {
@@ -146,6 +153,9 @@ class App extends React.Component {
 			if(response.ok) {
 				this.getList();
 			} else {
+				if(response.status === 403) {
+					this.clearState();
+				}
 				console.log("Server responded with a status:",response.status);
 			}
 		}).catch(error => {
@@ -164,6 +174,9 @@ class App extends React.Component {
 			if(response.ok) {
 				this.getList();
 			} else {
+				if(response.status === 403) {
+					this.clearState();
+				}
 				console.log("Server responded with a status:",response.status);
 			}
 		}).catch(error => {
@@ -183,6 +196,9 @@ class App extends React.Component {
 			if(response.ok) {
 				this.getList();
 			} else {
+				if(response.status === 403) {
+					this.clearState();
+				}
 				console.log("Server responded with a status:",response.status);
 			}
 		}).catch(error => {

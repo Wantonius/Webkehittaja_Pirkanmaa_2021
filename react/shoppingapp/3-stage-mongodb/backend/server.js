@@ -24,20 +24,34 @@ isUserLogged = (req,res,next) => {
 	if(!token) {
 		return res.status(403).json({message:"forbidden"});
 	}
-	for(let i=0;i<loggedSessions.length;i++) {
-		if(token === loggedSessions[i].token) {
-			let now = Date.now();
-			if(now > loggedSessions[i].ttl) {
-				loggedSessions.splice(i,1);
-				return res.status(403).json({message:"forbidden"});
-			}
-			req.session = {};
-			req.session.user = loggedSessions[i].user;
-			loggedSessions[i].ttl = loggedSessions[i].ttl+ttl;
-			return next();
+	sessionModel.findOne({"token":token}, function(err,session) {
+		if(err) {
+			console.log("Failed to find session. Reason:",err);
+			return res.status(403).json({message:"forbidden"});
 		}
-	}
-	return res.status(403).json({message:"forbidden"})
+		if(!session) {
+			return res.status(403).json({message:"forbidden"});
+		}
+		let now = Date.now();
+		if(session.ttl < now) {
+			sessionModel.deleteOne({"_id":session._id}, function(err) {
+				if(err) {
+					console.log("Failed to remove session. Reason:",err);
+				}
+				return res.status(403).json({message:"forbidden"})
+			})
+		} else {
+			req.session = {};
+			req.session.user = session.user;
+			session.ttl = now + ttl;
+			session.save(function(err) {
+				if(err) {
+					console.log("Failed to save session. Reason:",err);
+				}
+				return next();
+			})
+		}
+	})
 }
 
 createToken = () => {
@@ -93,29 +107,37 @@ app.post("/login",function(req,res) {
 	if(req.body.username.length < 4 || req.body.password.length < 8) {
 		return res.status(400).json({message:"Username must be atleast 4 characters and password 8 characters long"});
 	}
-	for(let i=0;i<registeredUsers.length;i++) {
-		if(registeredUsers[i].username === req.body.username) {
-			bcrypt.compare(req.body.password,registeredUsers[i].password,function(err,success) {
-					if(err) {
-						return res.status(400).json({message:"Bad Request"})
-					}
-					if(!success) {
-						return res.status(403).json({message:"forbidden"})
-					}
-					let token = createToken();
-					let time = Date.now();
-					let session = {
-						user:req.body.username,
-						ttl:time+ttl,
-						token:token
-					}
-					loggedSessions.push(session);
-					return res.status(200).json({token:token});
-			})
-			return;
+	userModel.findOne({"username":req.body.username}, function(err,user) {
+		if(err) {
+			console.log("Login failed, reason:",err);
+			return res.status(500).json({message:"Internal server error"})
 		}
-	}
-	return res.status(403).json({message:"forbidden"});
+		if(!user) {
+			return res.status(403).json({message:"forbidden"})
+		}
+		bcrypt.compare(req.body.password,user.password,function(err,success) {
+				if(err) {
+					return res.status(400).json({message:"Bad Request"})
+				}
+				if(!success) {
+					return res.status(403).json({message:"forbidden"})
+				}
+				let token = createToken();
+				let time = Date.now();
+				let session = new sessionModel({
+					user:user.username,
+					ttl:time+ttl,
+					token:token
+				})
+				session.save(function(err) {
+					if(err) {
+						console.log("Failed to save session, reason:",err);
+						return res.status(500).json({message:"Internal server error"})
+					}
+					return res.status(200).json({token:token})
+				})
+		})
+	});
 })
 
 app.post("/logout",function(req,res) {
@@ -123,13 +145,12 @@ app.post("/logout",function(req,res) {
 	if(!token) {
 		return res.status(404).json({message:"not found"})
 	}
-	for(let i=0;i<loggedSessions.length;i++) {
-		if(token === loggedSessions[i].token) {
-			loggedSessions.splice(i,1);
-			return res.status(200).json({message:"success"})
+	sessionModel.deleteOne({"token":token},function(err){
+		if(err) {
+			console.log("Failed to remove session in logout. Reason:",err);
 		}
-	}
-	return res.status(404).json({message:"not found"})
+		return res.status(200).json({message:"logged out"});
+	})
 })
 
 app.use("/api",isUserLogged,apiRoutes);
