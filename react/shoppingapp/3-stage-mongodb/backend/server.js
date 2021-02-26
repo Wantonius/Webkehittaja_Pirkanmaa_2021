@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
 const userModel = require("./models/user");
 const sessionModel = require("./models/session");
+const config = require("./config");
 
 let app = express();
 
@@ -13,6 +14,13 @@ mongoose.connect("mongodb://localhost/webshopping").then(
 	(error) => console.log("Failed to connect to MongoDB. Reason:",error)
 );
 
+
+/*
+mongoose.connect("mongodb+srv://"+config.username+":"+config.password+"@"+config.url+"/webshopping?retryWrites=true&w=majority").then(
+	() => console.log("Connected to MongoDB"),
+	(error) => console.log("Failed to connect to MongoDB. Reason:",error)
+);
+*/
 app.use(bodyParser.json());
 
 const ttl = 3600000;
