@@ -178,13 +178,13 @@ app.post("/logout",function(req,res) {
 	if(!token) {
 		return res.status(404).json({message:"not found"})
 	}
-	for(let i=0;i<loggedSessions.length;i++) {
-		if(token === loggedSessions[i].token) {
-			loggedSessions.splice(i,1);
-			return res.status(200).json({message:"success"})
+	let sql = "DELETE FROM sessions WHERE token = ?";
+	con.query(sql,[token],function(err) {
+		if(err) {
+			console.log(err);
 		}
-	}
-	return res.status(404).json({message:"not found"})
+		return res.status(200).json({message:"success"});
+	})
 })
 
 app.use("/api",isUserLogged,apiRoutes);
