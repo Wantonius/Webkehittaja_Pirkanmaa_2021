@@ -23,6 +23,26 @@ let con = mysql.createConnection({
 con.connect(function(err) {
 	if(err) throw err;
 	console.log("MySQL Connection successful!");
+	let sql = "CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) UNIQUE, password VARCHAR(256))";
+	
+	con.query(sql, function(err,result) {
+		if (err) throw err;
+		console.log("Created table users if it did not exist:",result);
+	});
+	
+	sql = "CREATE TABLE IF NOT EXISTS sessions (id INT AUTO_INCREMENT PRIMARY KEY, token VARCHAR(128), ttl BIGINT, user VARCHAR(50))";
+
+	con.query(sql, function(err,result) {
+		if (err) throw err;
+		console.log("Created table sessions if it did not exist:",result);
+	});
+
+	sql = "CREATE TABLE IF NOT EXISTS items (_id INT AUTO_INCREMENT PRIMARY KEY, type VARCHAR(120), count INT, price FLOAT, user VARCHAR(50))";
+
+	con.query(sql, function(err,result) {
+		if (err) throw err;
+		console.log("Created table items if it did not exist:",result);
+	});
 })
 
 //HELPER FUNCTIONS
@@ -32,20 +52,40 @@ isUserLogged = (req,res,next) => {
 	if(!token) {
 		return res.status(403).json({message:"forbidden"});
 	}
-	for(let i=0;i<loggedSessions.length;i++) {
-		if(token === loggedSessions[i].token) {
-			let now = Date.now();
-			if(now > loggedSessions[i].ttl) {
-				loggedSessions.splice(i,1);
-				return res.status(403).json({message:"forbidden"});
-			}
-			req.session = {};
-			req.session.user = loggedSessions[i].user;
-			loggedSessions[i].ttl = loggedSessions[i].ttl+ttl;
-			return next();
+	let sql = "SELECT * FROM sessions WHERE token = ?";
+	con.query(sql,[token],function(err,result) {
+		if(err) {
+			console.log(err);
+			return res.status(500).json({message:"Internal server error"})
 		}
-	}
-	return res.status(403).json({message:"forbidden"})
+		if(result.length === 0) {
+			console.log("hoplaa");
+			return res.status(403).json({message:"forbidden"});
+		}
+		let session = result[0];
+		let now = Date.now();
+		if(now > session.ttl) {
+			console.log("hoplaa 2");
+			sql = "DELETE FROM sessions WHERE token = ?";
+			con.query(sql,[session.token],function(err) {
+				if(err) {
+					console.log(err);					
+				}
+				return res.status(403).json({message:"forbidden"});
+			})
+		} else {
+			req.session = {};
+			req.session.user = session.user;
+			let tempttl = now + ttl;
+			sql = "UPDATE sessions SET ttl = ? WHERE token = ?";
+			con.query(sql,[tempttl, session.token],function(err) {
+				if(err) {
+					console.log(err);
+				}
+				return next();
+			})
+		}
+	})
 }
 
 createToken = () => {
@@ -70,22 +110,22 @@ app.post("/register",function(req,res) {
 	if(req.body.username.length < 4 || req.body.password.length < 8) {
 		return res.status(400).json({message:"Username must be atleast 4 characters and password 8 characters long"});
 	}
-	for(let i=0;i<registeredUsers.length;i++) {
-		if(req.body.username === registeredUsers[i].username) {
-			return res.status(409).json({message:"Username already in use"});
-		}
-	}
 	bcrypt.hash(req.body.password,14,function(err,hash) {
 		if(err) {
 			return res.status(400).json({message:"Bad Request"});
 		}
-		let user = {
-			username:req.body.username,
-			password:hash
-		}
-		registeredUsers.push(user);
-		console.log(registeredUsers);
-		return res.status(200).json({message:"success"});	
+		let sql = "INSERT INTO users (username,password) VALUES (?,?)";
+		let values = [req.body.username,hash];
+		con.query(sql,values,function(err,result) {
+			if(err) {
+				if(err.errno === 1062) {
+					return res.status(409).json({message:"Username is already in use"});
+				}
+				console.log(err);
+				return res.status(500).json({message:"Interal server error"});
+			}
+			return res.status(200).json({message:"success"});
+		})
 	})
 
 })
@@ -100,29 +140,37 @@ app.post("/login",function(req,res) {
 	if(req.body.username.length < 4 || req.body.password.length < 8) {
 		return res.status(400).json({message:"Username must be atleast 4 characters and password 8 characters long"});
 	}
-	for(let i=0;i<registeredUsers.length;i++) {
-		if(registeredUsers[i].username === req.body.username) {
-			bcrypt.compare(req.body.password,registeredUsers[i].password,function(err,success) {
-					if(err) {
-						return res.status(400).json({message:"Bad Request"})
-					}
-					if(!success) {
-						return res.status(403).json({message:"forbidden"})
-					}
-					let token = createToken();
-					let time = Date.now();
-					let session = {
-						user:req.body.username,
-						ttl:time+ttl,
-						token:token
-					}
-					loggedSessions.push(session);
-					return res.status(200).json({token:token});
-			})
-			return;
+	let sql = "SELECT * FROM users WHERE username = ?";
+	con.query(sql,[req.body.username],function(err,result) {
+		if(err) {
+			console.log(err);
+			return res.status(500).json({message:"Internal server error"})
 		}
-	}
-	return res.status(403).json({message:"forbidden"});
+		if(result.length === 0) {
+			return res.status(403).json({message:"forbidden"});
+		}
+		bcrypt.compare(req.body.password,result[0].password,function(err,success) {
+			if(err) {
+				console.log(err);
+				return res.status(500).json({message:"Internal server error"});
+			}
+			if(!success) {
+				return res.status(403).json({message:"forbidden"});
+			}
+			let token = createToken();
+			let now = Date.now();
+			let temp_ttl = now + ttl;
+			sql = "INSERT INTO sessions (user,token,ttl) VALUES (?,?,?)";
+			let values = [result[0].username,token,temp_ttl];
+			con.query(sql,values,function(err) {
+				if(err) {
+					console.log(err);
+					return res.status(500).json({message:"Internal server error"});
+				}
+				return res.status(200).json({token:token});
+			})
+		})
+	})
 })
 
 app.post("/logout",function(req,res) {
