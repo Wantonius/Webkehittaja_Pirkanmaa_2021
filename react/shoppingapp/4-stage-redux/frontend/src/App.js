@@ -23,12 +23,12 @@ class App extends React.Component {
 					}/>
 					<Route path="/list" render={() => 
 						this.props.isLogged ?
-						(<ShoppingList list={this.state.list} removeFromList={this.removeFromList} editItem={this.editItem}/>) :
+						(<ShoppingList/>) :
 						(<Redirect to="/"/>)
 					}/>
 					<Route path="/form" render={() => 
 						this.props.isLogged ?
-						(<ShoppingForm addToList={this.addToList}/>) :
+						(<ShoppingForm />) :
 						(<Redirect to="/"/>)
 					}/>	
 					<Route render={() => 

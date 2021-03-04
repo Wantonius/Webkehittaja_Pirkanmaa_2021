@@ -3,8 +3,10 @@ import {Table} from 'semantic-ui-react';
 import Row from './Row';
 import RemoveRow from './RemoveRow';
 import EditRow from './EditRow';
+import {connect} from 'react-redux';
+import {removeFromList,editItem} from '../actions/shoppingActions';
 
-export default class ShoppingList extends React.Component {
+class ShoppingList extends React.Component {
 	
 	constructor(props) {
 		super(props);
@@ -44,12 +46,12 @@ export default class ShoppingList extends React.Component {
 	}
 	
 	removeFromList = (id) => {
-		this.props.removeFromList(id);
+		this.props.dispatch(removeFromList(id,this.props.token));
 		this.cancel();
 	}
 	
 	editItem = (item) => {
-		this.props.editItem(item);
+		this.props.dispatch(editItem(item,this.props.token));
 		this.cancel();
 	}
 	
@@ -83,3 +85,12 @@ export default class ShoppingList extends React.Component {
 		)
 	}	
 }
+
+const mapStateToProps = (state) => {
+	return {
+		token:state.login.token,
+		list:state.shopping.list
+	}
+}
+
+export default connect(mapStateToProps)(ShoppingList);
