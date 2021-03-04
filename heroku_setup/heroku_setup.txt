@@ -1,0 +1,19 @@
+Heroku setup:
+
+1. Luo tunnarit heroku.com
+2. Lataa Heroku CLI (https://devcenter.heroku.com/articles/heroku-cli)
+3. Luo frontendistä optimoitu build (npm run build, lopputulos build-hakemistossa)
+4. Lisää backendiin staattisten tiedostojen tuki (express.static) sekä tarkista että app.listen komennon portti osoittaa muuttujaan process.env.PORT. Heroku valitsee portin applarille. Sitä ei voi itse määrätä.
+(https://expressjs.com/en/starter/static-files.html)
+5. Siirrä optimoitu build backendiin /public hakemiston alle ja laita
+express.static palvelemaan sitä.
+6. Luo hakemisto ja alusta sinne git (git init)
+7. Luo heroku-applari kyseisessä hakemistossa. (heroku create <app-name>)
+8. Tarkista, että git remote osoittaa herokuun (git remote)
+9. Kopio backend optimoituine frontend-buildeineen hakemistoon ILMAN 
+node_modules hakemistoa.
+10. Luo Procfile hakemistoon (web: node server.js). https://devcenter.heroku.com/articles/procfile 
+11. git add . / git commit -m "first commit" / git push heroku master
+12. heroku logs --tail
+13. Seuraa virheet ja korjaa.
+14. Tarvittaessa uudestaan git add etc loitsut kunnes applari on tilassa "up" ilman virheitä.
