@@ -1,3 +1,5 @@
+import {getList,clearShoppingState} from './shoppingActions';
+
 //ACTION CONSTANTS
 
 export const LOADING = "LOADING";
@@ -49,6 +51,7 @@ export const login = (user) => {
 			if(response.ok) {
 				response.json().then(data => {
 					dispatch(loginSuccess(data.token));
+					dispatch(getList(data.token));
 				}).catch(error => {
 					dispatch(loginFailed("Failed to parse JSON. Error:"+error))
 				})
@@ -72,8 +75,10 @@ export const logout = (token) => {
 		dispatch(loading());
 		fetch("/logout",request).then(response => {
 			dispatch(logoutSuccess());
+			dispatch(clearShoppingState());
 		}).catch(error => {
 			dispatch(logoutFailed("Server responded with an error. We logged you out anyway. Error:"+error));
+			dispatch(clearShoppingState());
 		})
 	}
 }	
