@@ -113,7 +113,7 @@ const useAction = () => {
 		})
 	}
 	
-	return useMemo(() => ({fetch,add,remove}),[dispatch]);
+	return useMemo(() => ({fetchList,add,remove}),[dispatch]);
 	
 }
 
