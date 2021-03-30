@@ -19,18 +19,18 @@ class ShoppingStore {
 	get totalPrice() {
 		let price = 0;
 		for(let i=0;i<this.list.length;i++) {
-			price = price + this.list[i].price;
+			price = price + parseInt(this.list[i].price);
 		}
 		return price;
 	}
 	
-	addToList = (item) => {
+	addToList(item) {
 		item.id = this.id;
 		this.list.push(item);
 		this.id++;
 	}
 	
-	removeFromList = (id) => {
+	removeFromList(id) {
 		for(let i=0;i<this.list.length;i++) {
 			if(this.list[i].id === id) {
 				this.list.splice(i,1);
@@ -38,7 +38,7 @@ class ShoppingStore {
 		}
 	}
 
-	editItem = (item) => {
+	editItem(item) {
 		for(let i=0;i<this.list.length;i++) {
 			if(this.list[i].id === item.id) {
 				this.list.splice(i,1,item);
@@ -47,7 +47,7 @@ class ShoppingStore {
 	}
 
 	reportStoreState = () => {
-		console.log(this.list)
+		console.log(this)
 	}
 }
 
