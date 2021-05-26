@@ -14,8 +14,11 @@ app.post("/message",function(req,res) {
 	client.connect(5000,"localhost",function() {
 		console.log("Socket connected");
 		client.write(message);
+	})
+	
+	client.on("data",function(data) {
 		client.destroy();
-		return res.status(200).json({message:"delivered"});
+		return res.status(200).json({message:data.toString()})
 	})
 })
 

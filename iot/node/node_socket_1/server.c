@@ -6,12 +6,28 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <pthread.h>
+
+void *client_handler(void *arg) {
+	int sock = *((int *)arg);
+	char buffer[256];
+	int no_of_bytes;
+	do {
+		memset(buffer,0,256);
+		no_of_bytes = read(sock,buffer,256);
+		if(no_of_bytes > 0) {
+			printf("Client message:%s\n",buffer);
+		}
+		write(sock,"Message received\n",17);
+	} while (no_of_bytes > 0);
+	close(sock);
+	return NULL;		
+}
 
 int main(int argc, char **argv) {
 	int sock, newsock, portno, clilength;
-	char buffer[256];
 	struct sockaddr_in server_address,client_address;
-	int no_of_bytes;
+	pthread_t handler_thread;
 	
 	if(argc < 2) {
 		printf("Please provide a port\n");
@@ -36,19 +52,18 @@ int main(int argc, char **argv) {
 	listen(sock,5);
 	clilength = sizeof(client_address);
 	printf("Now accepting connections in port:%d\n",portno);
-	newsock = accept(sock,(struct sockaddr *)&client_address,(socklen_t *)&clilength);
-	if(newsock < 0) {
-		printf("Error acception connection: %s\n",strerror(errno));
-		return 1;
-	}
-	do {
-		memset(buffer,0,256);
-		no_of_bytes = read(newsock,buffer,256);
-		if(no_of_bytes > 0) {
-			printf("Client message:%s\n",buffer);
+	while(1) {	
+		newsock = accept(sock,(struct sockaddr *)&client_address,(socklen_t *)&clilength);
+		if(newsock < 0) {
+			printf("Error acception connection: %s\n",strerror(errno));
+			return 1;
 		}
-	} while (no_of_bytes > 0);
-	close(newsock);
+		if(pthread_create(&handler_thread,NULL,&client_handler,(void *)&newsock) <0) {
+			printf("Failed to create new thread");
+			close(newsock);
+		}
+		pthread_detach(handler_thread);
+	}
 	close(sock);
 	return 0;
 }

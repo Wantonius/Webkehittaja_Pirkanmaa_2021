@@ -11,7 +11,11 @@ const sendMessage = () => {
 	}
 	fetch("/message",request).then(response => {
 		if(response.ok) {
-			console.log("Response ok");
+			response.json().then(data => {
+				console.log("Message from the backend:",data.message);
+			}).catch(error => {
+				console.log(error);
+			})
 		} else {
 			console.log("Server responded with a status:",response.status)
 		}
