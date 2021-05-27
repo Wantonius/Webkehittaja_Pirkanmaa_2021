@@ -1,0 +1,1 @@
+cmd_/home/erno/programming/Webkehittaja_Pirkanmaa_2021/iot/modules/led_dev/Module.symvers := sed 's/ko$$/o/' /home/erno/programming/Webkehittaja_Pirkanmaa_2021/iot/modules/led_dev/modules.order | scripts/mod/modpost -m -a   -o /home/erno/programming/Webkehittaja_Pirkanmaa_2021/iot/modules/led_dev/Module.symvers -e -i Module.symvers   -T -

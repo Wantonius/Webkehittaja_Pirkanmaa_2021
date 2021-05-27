@@ -1,0 +1,1 @@
+cmd_/home/erno/programming/Webkehittaja_Pirkanmaa_2021/iot/modules/hello/hello.mod := { echo  /home/erno/programming/Webkehittaja_Pirkanmaa_2021/iot/modules/hello/hello.o;  echo; } > /home/erno/programming/Webkehittaja_Pirkanmaa_2021/iot/modules/hello/hello.mod
