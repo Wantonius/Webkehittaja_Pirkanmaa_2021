@@ -1,1 +1,1 @@
-cmd_/home/erno/programming/Webkehittaja_Pirkanmaa_2021/iot/modules/led_dev/modules.order := {   echo /home/erno/programming/Webkehittaja_Pirkanmaa_2021/iot/modules/led_dev/led_dev.ko; :; } | awk '!x[$$0]++' - > /home/erno/programming/Webkehittaja_Pirkanmaa_2021/iot/modules/led_dev/modules.order
+cmd_/home/erno/gits/Webkehittaja_Pirkanmaa_2021/iot/modules/led_dev/modules.order := {   echo /home/erno/gits/Webkehittaja_Pirkanmaa_2021/iot/modules/led_dev/led_dev.ko; :; } | awk '!x[$$0]++' - > /home/erno/gits/Webkehittaja_Pirkanmaa_2021/iot/modules/led_dev/modules.order

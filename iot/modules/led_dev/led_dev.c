@@ -103,7 +103,37 @@ void remove_led_module(void) {
 }
 
 static ssize_t led_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count) {
+	long ticks = 0;
 	printk(KERN_DEBUG "led store called. Buffer %s\n",buf);
+	
+	if(strncmp(buf,"on",2) == 0) {
+		//gpio_set_value(LED_GPIO,1);
+		printk(KERN_DEBUG "Turning led on!\n");
+		return count;
+	}
+	if(strncmp(buf,"off",3) == 0) {
+		//gpio_set_value(LED_GPIO,0);
+		printk(KERN_DEBUG "Turning led off!\n");
+		return count;	
+	}
+	if(kstrtol(buf,0,&ticks)){
+		printk(KERN_DEBUG "Wrong value\n");
+		return count;
+	}
+	if(blinking) {
+		blinking = 0;
+	} else {
+		blinking = 1;
+		my_work = (struct blinking_work *)kzalloc(sizeof(struct blinking_work),GFP_KERNEL);
+		if(my_work == NULL) {
+			printk(KERN_ALERT "Can't reserve memory for work\n");
+			blinking = 0;
+			return count;
+		}
+		INIT_DELAYED_WORK((struct delayed_work *)my_work, &blinking_work_function);
+		my_work->data = ticks;
+		queue_delayed_work(my_wq,(struct delayed_work *)my_work,ticks);
+	}	
 	return count;
 }
 
@@ -112,6 +142,26 @@ static ssize_t led_show(struct device *dev, struct device_attribute *attr, char 
 	return 1;
 }
 
+void blinking_work_function(struct work_struct *work) {
+	struct blinking_work *my_work = (struct blinking_work *)work;
+	if(blinking == 0) {
+		//gpio_set_value(LED_GPIO,0);
+		printk(KERN_DEBUG "Turning blinking off\n");
+		kfree(my_work);
+		return;
+	}
+	if(led_on == 0) {
+		led_on = 1;
+		printk(KERN_DEBUG "Blink on\n");
+	} else {
+		led_on = 0;
+		printk(KERN_DEBUG "Blink off\n");
+	}
+	//gpio_set_value(LED_GPIO,led_on);
+	queue_delayed_work(my_wq,(struct delayed_work *)my_work,my_work->data);
+}
+
+		
 MODULE_LICENSE("GPL");
 module_init(init_led_module);
 module_exit(remove_led_module);

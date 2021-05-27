@@ -1,0 +1,17 @@
+{
+  "name": "led_server",
+  "version": "1.0.0",
+  "description": "led server for led device",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "led"
+  ],
+  "author": "erno",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
